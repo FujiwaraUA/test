@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
+import EventEmitter from 'eventemitter3';
 // import logo from './logo.svg';
 import './App.css';
 
@@ -20,6 +21,8 @@ var my_news = [
     bigText: 'На самом деле платно, просто нужно прочитать очень длинное лицензионное соглашение'
   }
 ];
+
+window.ee = new EventEmitter();
 
 
 class News extends Component {
@@ -58,7 +61,6 @@ class Add extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      btnIsDisabled: true,
       agreeNotChecked: true,
       authorIsEmpty: true,
       textIsEmpty: true};
@@ -70,9 +72,22 @@ class Add extends Component {
 
     onBtnClickHandler = (e) => {
       e.preventDefault();
+
+      var textEl = ReactDOM.findDOMNode(this.refs.text);
+
       var author = ReactDOM.findDOMNode(this.refs.author).value;
-      var text = ReactDOM.findDOMNode(this.refs.text).value;
-      alert(author + '\n' + text);
+      var text = textEl.value;
+
+      var item = [{
+        author: author,
+        text: text,
+        bigText: '...'
+      }];
+
+      window.ee.emit('News.add', item);
+
+      textEl.value = '';
+      this.setState({textIsEmpty: true});
     }
 
     onCheckRuleClick = (e) => {
@@ -91,9 +106,7 @@ class Add extends Component {
   }
 
     render() {
-      var agreeNotChecked = this.state.agreeNotChecked,
-          authorIsEmpty = this.state.authorIsEmpty,
-          textIsEmpty = this.state.textIsEmpty;
+      const {agreeNotChecked,authorIsEmpty,textIsEmpty} = this.state;
 
       return (
         <form className='add cf'>
@@ -120,7 +133,7 @@ class Add extends Component {
         ref='alert_button'
         disabled={agreeNotChecked || authorIsEmpty || textIsEmpty}
         >
-        Показать alert
+        Добавить новость
         </button>
         </form>
       );
@@ -129,10 +142,7 @@ class Add extends Component {
 
   class Article extends Component {
 
-    constructor(props) {
-      super(props);
-      this.state ={visible : false};
-    }
+    state ={visible : false};
 
     readmoreClick = () => {
       this.setState({visible: true})
@@ -158,12 +168,27 @@ class Add extends Component {
 
 
   class App extends Component {
+
+    state ={news : my_news};
+
+    componentDidMount() {
+      var self = this;
+      window.ee.addListener('News.add', function(item) {
+        var nextNews = item.concat(self.state.news);
+        self.setState({news: nextNews});
+      });
+    }
+
+    componentWillUnmount() {
+      window.ee.removeListener('News.add')
+    }
+
     render() {
       return (
         <div className="app">
         <Add />
         <h3>Новости</h3>
-        <News data={my_news} />
+        <News  data={this.state.news} />
         </div>
       );
     }
