@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
 // import logo from './logo.svg';
 import './App.css';
 
@@ -22,65 +23,150 @@ var my_news = [
 
 
 class News extends Component {
+  constructor(props) {
+    super(props);
+    this.state ={counter : 0};
+  }
 
   render() {
     var data = this.props.data;
     var newsTemplate;
     if (data.length > 0) {
       newsTemplate = data.map(function(item, index) {
-    return (
-        <div key={index}>
+        return (
+          <div key={index}>
           <Article data={item} />
-        </div>
-      )
-    })
+          </div>
+        )
+      })
     } else {
-    newsTemplate = <p>К сожалению новостей нет</p>
+      newsTemplate = <p>К сожалению новостей нет</p>
     }
 
 
     return (
       <div className="news">
-        {newsTemplate}
-        <strong className= {'news__count ' + (data.length > 0 ? '':'none') }>Всего новостей: {data.length}</strong>
+      {newsTemplate}
+      <strong className= {'news__count ' + (data.length > 0 ? '':'none') }>Всего новостей: {data.length}</strong>
       </div>
     );
   }
 }
 
-class Article extends Component {
 
+class Add extends Component {
   constructor(props) {
     super(props);
-    this.state ={visible : false};
+    this.state = {
+      btnIsDisabled: true,
+      agreeNotChecked: true,
+      authorIsEmpty: true,
+      textIsEmpty: true};
     }
 
-  render() {
-    var author = this.props.data.author,
-        text = this.props.data.text,
-        bigText = this.props.data.bigText,
-        visible = this.state.visible;
-    return (
-      <div className="article">
-      <p className="news__author">{author}:</p>
-      <p className="news__text">{text}</p>
-      <a href="#" className={'news__readmore ' + (visible ? 'none': '')}>Подробнее</a>
-      <p className={'news__big-text ' + (visible ? '': 'none')}>{bigText}</p>
-      </div>
-    );
+    componentDidMount() {
+      ReactDOM.findDOMNode(this.refs.author).focus();
+    }
+
+    onBtnClickHandler = (e) => {
+      e.preventDefault();
+      var author = ReactDOM.findDOMNode(this.refs.author).value;
+      var text = ReactDOM.findDOMNode(this.refs.text).value;
+      alert(author + '\n' + text);
+    }
+
+    onCheckRuleClick = (e) => {
+      this.setState({agreeNotChecked: !this.state.agreeNotChecked});
+    }
+
+    onFieldChange = (fieldName, e) => {
+      var next = {};
+      if (e.target.value.trim().length > 0) {
+        next[fieldName] = false;
+        this.setState(next);
+      } else {
+        next[fieldName] = true;
+        this.setState(next);
+    }
   }
-}
+
+    render() {
+      var agreeNotChecked = this.state.agreeNotChecked,
+          authorIsEmpty = this.state.authorIsEmpty,
+          textIsEmpty = this.state.textIsEmpty;
+
+      return (
+        <form className='add cf'>
+        <input
+        type='text'
+        className='add__author'
+        onChange={this.onFieldChange.bind(this, 'authorIsEmpty')}
+        placeholder='Ваше имя'
+        ref='author'
+        />
+        <textarea
+        className='add__text'
+        onChange={this.onFieldChange.bind(this, 'textIsEmpty')}
+        placeholder='Текст новости'
+        ref='text'
+        ></textarea>
+        <label className='add__checkrule'>
+        <input type='checkbox' ref='checkrule' onChange={this.onCheckRuleClick}/>Я согласен с правилами
+        </label>
+
+        <button
+        className='add__btn'
+        onClick={this.onBtnClickHandler}
+        ref='alert_button'
+        disabled={agreeNotChecked || authorIsEmpty || textIsEmpty}
+        >
+        Показать alert
+        </button>
+        </form>
+      );
+    }
+  }
+
+  class Article extends Component {
+
+    constructor(props) {
+      super(props);
+      this.state ={visible : false};
+    }
+
+    readmoreClick = () => {
+      this.setState({visible: true})
+    }
+
+    render() {
+      var author = this.props.data.author,
+      text = this.props.data.text,
+      bigText = this.props.data.bigText,
+      visible = this.state.visible;
 
 
-class App extends Component {
-  render() {
-    return (
-      <div className="app">
+      return (
+        <div className="article">
+        <p className="news__author">{author}:</p>
+        <p className="news__text">{text}</p>
+        <a href="#" onClick={this.readmoreClick}  className={'news__readmore ' + (visible ? 'none': '')}>Подробнее</a>
+        <p className={'news__big-text ' + (visible ? '': 'none')}>{bigText}</p>
+        </div>
+      );
+    }
+  }
+
+
+  class App extends Component {
+    render() {
+      return (
+        <div className="app">
+        <Add />
         <h3>Новости</h3>
         <News data={my_news} />
-      </div>
-    );
+        </div>
+      );
+    }
   }
-}
 
-export default App;
+  export default App;
